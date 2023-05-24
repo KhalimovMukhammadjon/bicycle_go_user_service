@@ -1,0 +1,3 @@
+[submodule "bicycle-protos"]
+	path = bicycle-protos
+	url = git@github.com:KhalimovMukhammadjon/bicycle-protos.git
