@@ -4,6 +4,7 @@ import (
 	"bicycle/bicycle_go_user_service/genproto/user_service"
 	"bicycle/bicycle_go_user_service/storage"
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,6 +21,10 @@ func NewUserRepo(db *pgxpool.Pool) storage.UserRepoI {
 }
 
 func (u *userRepo) Create(ctx context.Context, req *user_service.CreateUserRequest) (resp *user_service.PrimaryKey, err error) {
+	
+
+	fmt.Println("GOLANG GOLANG GOLANG GOLANG GOLANG GOLANG GOLANG GOLANG GOLANG GOLANG GOLANG")
+
 	query :=
 		`
 		INSERT INTO users
