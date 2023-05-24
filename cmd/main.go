@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bicycle/user_service/config"
-	"bicycle/user_service/pkg/logger"
+	"bicycle/bicycle_go_user_service/config"
+	"bicycle/bicycle_go_user_service/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )

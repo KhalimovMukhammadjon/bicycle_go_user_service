@@ -1,11 +1,11 @@
 package service
 
 import (
-	"bicycle/user_service/config"
-	"bicycle/user_service/genproto/user_service"
-	"bicycle/user_service/grpc/client"
-	"bicycle/user_service/pkg/logger"
-	"bicycle/user_service/storage"
+	"bicycle/bicycle_go_user_service/config"
+	"bicycle/bicycle_go_user_service/genproto/user_service"
+	"bicycle/bicycle_go_user_service/grpc/client"
+	"bicycle/bicycle_go_user_service/pkg/logger"
+	"bicycle/bicycle_go_user_service/storage"
 )
 
 type userService struct {

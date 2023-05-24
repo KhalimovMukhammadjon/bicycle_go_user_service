@@ -1,8 +1,8 @@
 package client
 
 import (
-	"bicycle/user_service/config"
-	"bicycle/user_service/genproto/order_service"
+	"bicycle/bicycle_go_user_service/config"
+	"bicycle/bicycle_go_user_service/genproto/order_service"
 
 	"google.golang.org/grpc"
 )
@@ -16,6 +16,7 @@ type grpcClients struct {
 	orderService   order_service.OrderServiceClient
 	productService order_service.ProductServiceClient
 }
+
 func NewGrpcClient(cfg config.Config) (ServiceManagerI, error) {
 	connUserService, err := grpc.Dial(
 		cfg.OrderServiceHost+cfg.OrderServicePort,
