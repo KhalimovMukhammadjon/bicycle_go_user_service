@@ -15,5 +15,5 @@ type UserRepoI interface {
 	GetById(ctx context.Context, req *user_service.PrimaryKey) (resp *user_service.User, err error)
 	GetList(ctx context.Context, req *user_service.GetAllUserRequest) (resp *user_service.GetAllUserResponse, err error)
 	// Update(ctx context.Context, req *user_service.PrimaryKey) error
-	// Delete(ctx context.Context, req *user_service.PrimaryKey) error
+	Delete(ctx context.Context, req *user_service.PrimaryKey) (err error)
 }
