@@ -36,7 +36,7 @@ func (o userService) Create(ctx context.Context, req *user_service.CreateUserReq
 
 	pKey, err := o.strg.User().Create(context.Background(), req)
 	if err != nil {
-		o.log.Error("!!!CreateBicycle!!!", logger.Error(err))
+		o.log.Error("!!!CreateBook!!!", logger.Error(err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	resp, err = o.strg.User().GetById(ctx, pKey)
@@ -60,13 +60,13 @@ func (u userService) GetById(ctx context.Context, req *user_service.PrimaryKey) 
 }
 
 func (u userService) Delete(ctx context.Context, req *user_service.PrimaryKey) (resp *empty.Empty, err error) {
-	u.log.Info("---DeleteUser--->", logger.Any("req", req))
+	u.log.Info("---Delete--->", logger.Any("req", req))
 
 	resp = &empty.Empty{}
 
 	err = u.strg.User().Delete(ctx, req)
 	if err != nil {
-		u.log.Error("!!!DeleteUser--->", logger.Error(err))
+		u.log.Error("!!!DeleteBook--->", logger.Error(err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
