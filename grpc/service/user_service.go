@@ -45,19 +45,19 @@ func (o userService) Create(ctx context.Context, req *user_service.CreateUserReq
 	return
 }
 
-func (u userService) GetById(ctx context.Context, req *user_service.PrimaryKey) (resp *user_service.User, err error) {
-	u.log.Info("---GetBicycle--->", logger.Any("req", req))
-	fmt.Println(req.Id)
+// func (u userService) GetById(ctx context.Context, req *user_service.PrimaryKey) (resp *user_service.User, err error) {
+// 	u.log.Info("---GetBicycle--->", logger.Any("req", req))
+// 	fmt.Println(req.Id)
 
-	resp, err = u.strg.User().GetById(ctx, req)
+// 	resp, err = u.strg.User().GetById(ctx, req)
 
-	if err != nil {
-		u.log.Error("GetBicycle--->", logger.Error(err))
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
+// 	if err != nil {
+// 		u.log.Error("GetBicycle--->", logger.Error(err))
+// 		return nil, status.Error(codes.InvalidArgument, err.Error())
+// 	}
 
-	return resp, err
-}
+// 	return resp, err
+// }
 
 func (u userService) Delete(ctx context.Context, req *user_service.PrimaryKey) (resp *empty.Empty, err error) {
 	u.log.Info("---Delete--->", logger.Any("req", req))
@@ -71,4 +71,37 @@ func (u userService) Delete(ctx context.Context, req *user_service.PrimaryKey) (
 	}
 
 	return resp, nil
+}
+
+// func (u userService) PhoneChecker(ctx context.Context, req *user_service.PhoneNumber) (resp *user_service.Checker, err error) {
+// 	u.log.Info("---SMS code Checker--->", logger.Any("req", req))
+
+// 	fmt.Println("Request--------------->>>>>>>>", req.PhoneNumber)
+
+// 	user, err := u.strg.User().GetUserByPhone(ctx, req)
+// 	if err != nil {
+// 		u.log.Error("!!!PhoneChecker--->", logger.Error(err))
+// 		return resp, status.Error(codes.InvalidArgument, err.Error())
+// 	}
+
+// 	if user != nil {
+// 		resp.Check = true
+// 	}
+// 	fmt.Println("Test for user--------------->>>>>>>>", resp)
+
+// 	return resp, nil
+// }
+
+func (u userService) GetById(ctx context.Context, req *user_service.PrimaryKey) (resp *user_service.User, err error) {
+	u.log.Info("---GetBicycle--->", logger.Any("req", req))
+	fmt.Println(req.Id)
+
+	resp, err = u.strg.User().GetById(ctx, req)
+
+	if err != nil {
+		u.log.Error("GetBicycle--->", logger.Error(err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return resp, err
 }

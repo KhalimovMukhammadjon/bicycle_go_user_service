@@ -16,4 +16,6 @@ type UserRepoI interface {
 	GetList(ctx context.Context, req *user_service.GetAllUserRequest) (resp *user_service.GetAllUserResponse, err error)
 	// Update(ctx context.Context, req *user_service.PrimaryKey) error
 	Delete(ctx context.Context, req *user_service.PrimaryKey) (err error)
+	// GetUserByPhone(ctx context.Context, req *user_service.PhoneNumber) (resp *user_service.Checker, err error)
+	GetUserByPhone(ctx context.Context, req *user_service.PrimaryKey) (resp *user_service.User, err error)
 }

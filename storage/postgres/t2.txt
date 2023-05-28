@@ -1,0 +1,59 @@
+// check if user with this phone number already exists in database
+var existingID int64
+query := "SELECT id FROM users WHERE phone_number = ?"
+err := u.db.QueryRow(query, phoneNumber).Scan(&existingID)
+if err != nil {
+	if err != sql.ErrNoRows {
+		// database error
+		return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+	}
+	// user not found, continue with registration process
+} else {
+	// user already exists, send error response
+	return nil, status.Errorf(codes.AlreadyExists, "User with this phone number already exists")
+}
+
+// insert new user into database
+query = 
+`INSERT INTO users (phone_number, first_name, last_name) 
+	VALUES 
+	(
+		$1,
+		$2,
+		$3
+	)`
+
+result, err := u.db.Exec(query, phoneNumber, firstName, lastName)
+if err != nil {
+	// database error
+	return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+}
+
+// get user ID from database result
+userID, err := result.LastInsertId()
+if err != nil {
+	// database error
+	return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+}
+
+// generate SMS code
+smsCode := rand.Intn(100000)
+
+// send SMS message with code
+err = sendSMS(phoneNumber, smsCode)
+if err != nil {
+	return nil, status.Errorf(codes.Internal, "Error sending SMS message: %v", err)
+}
+
+// save SMS code to database
+query = `INSERT INTO sms_codes (user_id, code) VALUES ($1, $2)`
+_, err = u.db.Exec(query, userID, smsCode)
+if err != nil {
+	return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+}
+
+// send success response with user ID and SMS code
+return &user_service.RegisterResponse{
+	UserId: userID,
+	SmsCode: smsCode,
+}, nil

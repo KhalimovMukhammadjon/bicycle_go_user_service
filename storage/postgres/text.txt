@@ -1,0 +1,122 @@
+
+user_service.go:
+
+```
+type UserService struct {
+    db *sql.DB
+}
+
+func (u *UserService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+    phoneNumber := req.PhoneNumber
+
+    // check if user with this phone number exists in database
+    var userID int64
+    query := "SELECT id FROM users WHERE phone_number = ?"
+    err := u.db.QueryRow(query, phoneNumber).Scan(&userID)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            // user not found, send error response
+            return nil, status.Errorf(codes.NotFound, "User not found")
+        }
+        // database error, send internal error response
+        return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+    }
+
+    // user found, send success response with user ID
+    return &user_service.LoginResponse{UserId: userID}, nil
+}
+
+func (u *UserService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+    phoneNumber := req.PhoneNumber
+    firstName := req.FirstName
+    lastName := req.LastName
+
+    // check if user with this phone number already exists in database
+    var existingID int64
+    query := "SELECT id FROM users WHERE phone_number = ?"
+    err := u.db.QueryRow(query, phoneNumber).Scan(&existingID)
+    if err != nil {
+        if err != sql.ErrNoRows {
+            // database error
+            return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+        }
+        // user not found, continue with registration process
+    } else {
+        // user already exists, send error response
+        return nil, status.Errorf(codes.AlreadyExists, "User with this phone number already exists")
+    }
+
+    // insert new user into database
+    query = "INSERT INTO users (phone_number, first_name, last_name) VALUES (?, ?, ?)"
+    result, err := u.db.Exec(query, phoneNumber, firstName, lastName)
+    if err != nil {
+        // database error
+        return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+    }
+
+    // get user ID from database result
+    userID, err := result.LastInsertId()
+    if err != nil {
+        // database error
+        return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+    }
+
+    // send success response with user ID
+    return &pb.RegisterResponse{UserId: userID}, nil
+}
+```
+
+sms_service.go:
+
+```
+type SmsService struct{}
+
+func (s *SmsService) SendSms(ctx context.Context, req *pb.SendSmsRequest) (*pb.SendSmsResponse, error) {
+    phoneNumber := req.PhoneNumber
+    message := req.Message
+
+    // send SMS using your preferred SMS provider's API here
+
+    // send success response
+    return &pb.SendSmsResponse{Success: true}, nil
+}
+```
+
+service.go:
+
+```
+type server struct {
+    userSvc *UserService
+    smsSvc  *SmsService
+}
+
+func main() {
+    // create database connection using your preferred database driver here
+    db, err := sql.Open("mysql", "user:password@tcp(localhost:3306)/database")
+    if err != nil {
+        log.Fatalf("Failed to open database connection: %v", err)
+    }
+    defer db.Close()
+
+    // initialize gRPC server
+    lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 50051))
+    if err != nil {
+        log.Fatalf("Failed to listen: %v", err)
+    }
+    grpcServer := grpc.NewServer()
+
+    // initialize services and register them with gRPC server
+    userSvc := &UserService{db: db}
+    smsSvc := &SmsService{}
+    pb.RegisterUserServiceServer(grpcServer, userSvc)
+    pb.RegisterSmsServiceServer(grpcServer, smsSvc)
+
+    // start gRPC server
+    log.Println("Starting gRPC server on port 50051...")
+    if err := grpcServer.Serve(lis); err != nil {
+        log.Fatalf("Failed to serve: %v", err)
+    }
+}
+```
+
+This code should provide you a starting point for your implementation. However, keep in mind that you will need to customize it to fit your specific requirements and ensure that you handle errors and edge cases properly.
