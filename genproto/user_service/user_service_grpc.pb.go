@@ -26,6 +26,8 @@ const (
 	UserService_Delete_FullMethodName       = "/user_service.UserService/Delete"
 	UserService_Update_FullMethodName       = "/user_service.UserService/Update"
 	UserService_PhoneChecker_FullMethodName = "/user_service.UserService/PhoneChecker"
+	UserService_Login_FullMethodName        = "/user_service.UserService/Login"
+	UserService_Register_FullMethodName     = "/user_service.UserService/Register"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -38,6 +40,8 @@ type UserServiceClient interface {
 	Delete(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Update(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PhoneChecker(ctx context.Context, in *PhoneNumber, opts ...grpc.CallOption) (*Checker, error)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	Register(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 }
 
 type userServiceClient struct {
@@ -102,6 +106,24 @@ func (c *userServiceClient) PhoneChecker(ctx context.Context, in *PhoneNumber, o
 	return out, nil
 }
 
+func (c *userServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, UserService_Login_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) Register(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	out := new(RegisterResponse)
+	err := c.cc.Invoke(ctx, UserService_Register_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -112,6 +134,8 @@ type UserServiceServer interface {
 	Delete(context.Context, *PrimaryKey) (*emptypb.Empty, error)
 	Update(context.Context, *PrimaryKey) (*emptypb.Empty, error)
 	PhoneChecker(context.Context, *PhoneNumber) (*Checker, error)
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	Register(context.Context, *CreateUserRequest) (*RegisterResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -136,6 +160,12 @@ func (UnimplementedUserServiceServer) Update(context.Context, *PrimaryKey) (*emp
 }
 func (UnimplementedUserServiceServer) PhoneChecker(context.Context, *PhoneNumber) (*Checker, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PhoneChecker not implemented")
+}
+func (UnimplementedUserServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedUserServiceServer) Register(context.Context, *CreateUserRequest) (*RegisterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -258,6 +288,42 @@ func _UserService_PhoneChecker_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Register_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Register(ctx, req.(*CreateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -288,6 +354,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PhoneChecker",
 			Handler:    _UserService_PhoneChecker_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _UserService_Login_Handler,
+		},
+		{
+			MethodName: "Register",
+			Handler:    _UserService_Register_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

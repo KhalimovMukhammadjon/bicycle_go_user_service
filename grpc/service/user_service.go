@@ -36,7 +36,7 @@ func (o userService) Create(ctx context.Context, req *user_service.CreateUserReq
 
 	pKey, err := o.strg.User().Create(context.Background(), req)
 	if err != nil {
-		o.log.Error("!!!CreateBook!!!", logger.Error(err))
+		o.log.Error("!!!CreateUser!!!", logger.Error(err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	resp, err = o.strg.User().GetById(ctx, pKey)
@@ -66,7 +66,7 @@ func (u userService) Delete(ctx context.Context, req *user_service.PrimaryKey) (
 
 	err = u.strg.User().Delete(ctx, req)
 	if err != nil {
-		u.log.Error("!!!DeleteBook--->", logger.Error(err))
+		u.log.Error("!!!DeleteUser--->", logger.Error(err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -105,3 +105,26 @@ func (u userService) GetById(ctx context.Context, req *user_service.PrimaryKey) 
 
 	return resp, err
 }
+
+func (u userService) UpdateUser(ctx context.Context, req *user_service.PrimaryKey) (resp *empty.Empty, err error) {
+	u.log.Info("---UpdateUser--->", logger.Any("req", req))
+
+	resp = &empty.Empty{}
+
+	err = u.strg.User().Update(context.Background(), req)
+	if err != nil {
+		u.log.Error("!!!UpdateUser--->", logger.Error(err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return resp, nil
+}
+
+// pKey, err := o.strg.User().Create(context.Background(), req)
+// if err != nil {
+// 	o.log.Error("!!!CreateBook!!!", logger.Error(err))
+// 	return nil, status.Error(codes.InvalidArgument, err.Error())
+// }
+// resp, err = o.strg.User().GetById(ctx, pKey)
+// fmt.Println("err", err)
+
+// return

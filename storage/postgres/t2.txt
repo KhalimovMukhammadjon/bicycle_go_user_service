@@ -57,3 +57,150 @@ return &user_service.RegisterResponse{
 	UserId: userID,
 	SmsCode: smsCode,
 }, nil
+
+
+
+
+//<-------------- new version for auth service sms code in golang ------------->
+
+Here is an implementation of a gRPC service with login and registration functionality that also sends an SMS code:
+
+proto/user.proto:
+
+```proto
+syntax = "proto3";
+
+package user;
+
+service UserService {
+    rpc Login(LoginRequest) returns (LoginResponse) {}
+    rpc Register(RegisterRequest) returns (RegisterResponse) {}
+}
+
+message LoginRequest {
+    string phone_number = 1;
+}
+
+message LoginResponse {
+    int64 user_id = 1;
+}
+
+message RegisterRequest {
+    string phone_number = 1;
+    string first_name = 2;
+    string last_name = 3;
+}
+
+message RegisterResponse {
+    int64 user_id = 1;
+}
+
+service SmsService {
+    rpc SendSmsCode(SendSmsCodeRequest) returns (SendSmsCodeResponse) {}
+}
+
+message SendSmsCodeRequest {
+    string phone_number = 1;
+}
+
+message SendSmsCodeResponse {
+    bool success = 1;
+}
+```
+
+user_service.go:
+
+```go
+package main
+
+import (
+    "context"
+    "database/sql"
+    "fmt"
+
+    "github.com/username/your-service/proto/user"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/codes"
+    "google.golang.org/grpc/status"
+)
+
+type UserService struct {
+    db      *sql.DB
+    smsSvc  user.SmsServiceClient
+    smsCode map[string]string
+}
+
+func (u *UserService) Login(ctx context.Context, req *user.LoginRequest) (*user.LoginResponse, error) {
+    phoneNumber := req.PhoneNumber
+    smsCode, ok := u.smsCode[phoneNumber]
+    if !ok {
+        return nil, status.Errorf(codes.NotFound, "SMS code not found for this phone number")
+    }
+
+    // check if user with this phone number exists in database
+    var userID int64
+    query := "SELECT id FROM users WHERE phone_number = ?"
+    err := u.db.QueryRow(query, phoneNumber).Scan(&userID)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            // user not found, send error response
+            return nil, status.Errorf(codes.NotFound, "User not found")
+        }
+        // database error, send internal error response
+        return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+    }
+
+    // user found, clear SMS code and delete entry from map
+    delete(u.smsCode, phoneNumber)
+
+    // send success response with user ID
+    return &user.LoginResponse{UserId: userID}, nil
+}
+
+func (u *UserService) Register(ctx context.Context, req *user.RegisterRequest) (*user.RegisterResponse, error) {
+    phoneNumber := req.PhoneNumber
+    firstName := req.FirstName
+    lastName := req.LastName
+
+    // check if user with this phone number already exists in database
+    var existingID int64
+    query := "SELECT id FROM users WHERE phone_number = ?"
+    err := u.db.QueryRow(query, phoneNumber).Scan(&existingID)
+    if err != nil {
+        if err != sql.ErrNoRows {
+            // database error
+            return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+        }
+        // user not found, continue with registration process
+    } else {
+        // user already exists, send error response
+        return nil, status.Errorf(codes.AlreadyExists, "User with this phone number already exists")
+    }
+
+    // generate random SMS code and save it in map
+    smsCode := fmt.Sprintf("%06d", rand.Intn(1000000))
+    u.smsCode[phoneNumber] = smsCode
+
+    // insert new user into database
+    query = "INSERT INTO users (phone_number, first_name, last_name) VALUES (?, ?, ?)"
+    result, err := u.db.Exec(query, phoneNumber, firstName, lastName)
+    if err != nil {
+        // database error
+        return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+    }
+
+    // get user ID from database result
+    userID, err := result.LastInsertId()
+    if err != nil {
+        // database error
+        return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+    }
+
+    // send SMS code to user's phone number using SMS service
+    smsReq := &user.SendSmsCodeRequest{PhoneNumber: phoneNumber}
+    if _, err := u.smsSvc.SendSmsCode(ctx, smsReq); err != nil {
+        return nil, status.Errorf(codes.Internal, "Failed to send SMS code: %v", err)
+    }
+
+    // send success response with user ID
+    return &user.RegisterResponse{UserId: userID},

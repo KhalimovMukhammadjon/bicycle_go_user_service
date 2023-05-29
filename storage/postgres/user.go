@@ -5,8 +5,10 @@ import (
 	"bicycle/bicycle_go_user_service/storage"
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -102,6 +104,34 @@ func (u *userRepo) Delete(ctx context.Context, req *user_service.PrimaryKey) (er
 	return nil
 }
 
+func (u *userRepo) Update(ctx context.Context, req *user_service.PrimaryKey) error {
+
+	var resp user_service.User
+
+	query := `
+		UPDATE SET users 
+			id,
+			first_name,
+			last_name,
+			phone_number
+		WHERE id = $1
+	`
+
+	params := map[string]interface{}{
+		"id":         req.Id,
+		"firs_name":  resp.FirstName,
+		"last_name":  resp.LastName,
+		"phone_name": resp.PhoneNumber,
+	}
+
+	_, err := u.db.Exec(ctx, query, pgx.NamedArgs(params))
+	if err != nil {
+		return nil
+	}
+
+	return nil
+}
+
 // func (u *userRepo) GetUserByPhone(ctx context.Context, req *user_service.PhoneNumber) (resp *user_service.Checker, err error) {
 
 // 	var user user_service.User
@@ -151,40 +181,53 @@ func (u *userRepo) Delete(ctx context.Context, req *user_service.PrimaryKey) (er
 // 	}, nil
 // }
 
+func (u *userRepo) Login(ctx context.Context, req *user_service.LoginRequest) (*user_service.LoginResponse, error) {
+	phoneNumber := req.PhoneNumber
 
-// l
-// func (u *userRepo) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-//     phoneNumber := req.PhoneNumber
+	var userID int64
+	query := `SELECT id FROM users WHERE phone_number = ?`
+	err := u.db.QueryRow(ctx, query, phoneNumber).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Errorf(codes.NotFound, "User not found")
+		}
+		return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+	}
+	return &user_service.LoginResponse{UserId: userID}, nil
+}
 
-//     // check if user with this phone number exists in database
-//     var userID int64
-//     query := "SELECT id FROM users WHERE phone_number = $1"
-//     err := u.db.QueryRow(query, phoneNumber).Scan(&userID)
-//     if err != nil {
-//         if err == sql.ErrNoRows {
-//             return nil, status.Errorf(codes.NotFound, "User not found")
-//         }
-//         return nil, status.Errorf(codes.Internal, "Database error: %v", err)
-//     }
+func (u *userRepo) Register(ctx context.Context, req *user_service.CreateUserRequest) (*user_service.RegisterResponse, error) {
+	phoneNumber := req.PhoneNumber
+	firstName := req.FirstName
+	lastName := req.LastName
 
-//     // user found, send success response with user ID
-//     return &user_service.LoginResponse{UserId: userID}, nil
-// }
+	var existingID int64
+	query := "SELECT id FROM users WHERE phone_number = ?"
+	err := u.db.QueryRow(ctx, query, phoneNumber).Scan(&existingID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return nil, status.Errorf(codes.Internal, "Database error: %v", err)
+		}
+	} else {
+		return nil, err
+	}
 
-func (u *userRepo) Login(ctx context.Context, req *user_service.LoginRequest) (*user.LoginResponse, error) {
-    phoneNumber := req.PhoneNumber
+	query = `INSERT INTO users (phone_number, first_name, last_name) VALUES ($1, $2, $3)`
+	result, err := u.db.Exec(ctx, query, phoneNumber, firstName, lastName)
+	if err != nil {
+		return nil, err
+	}
 
-    // check if user with this phone number exists in database
-    var userID int64
-    query := "SELECT id FROM users WHERE phone_number = $1"
-    err := u.db.QueryRow(query, phoneNumber).Scan(&userID)
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return nil, status.Errorf(codes.NotFound, "User not found")
-        }
-        return nil, status.Errorf(codes.Internal, "Database error: %v", err)
-    }
+	fmt.Println(result)
+	// userID, err := user_service.User.PhoneNumber
+	// if err != nil {
+	// 	return nil, err
+	// }
 
+	// smsReq := &sms_service.GetSmsRequest{SmsId: phoneNumber}
+	// if _, err := u.strg.SendSmsCode(ctx, smsReq); err != nil {
+	// 	return nil, err
+	// }
 
-    return &user.LoginResponse{UserId: userID}, nil
+	return nil, nil
 }
