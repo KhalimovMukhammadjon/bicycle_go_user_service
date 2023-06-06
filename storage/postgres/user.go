@@ -2,13 +2,13 @@ package postgres
 
 import (
 	"bicycle/bicycle_go_user_service/genproto/user_service"
+	"bicycle/bicycle_go_user_service/pkg/helper"
 	"bicycle/bicycle_go_user_service/storage"
 	"context"
 	"database/sql"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -85,12 +85,87 @@ func (u *userRepo) GetById(ctx context.Context, req *user_service.PrimaryKey) (r
 }
 
 func (u *userRepo) GetList(ctx context.Context, req *user_service.GetAllUserRequest) (resp *user_service.GetAllUserResponse, err error) {
-	// var (
-	// 	params (map[string]interface{})
+	resp = &user_service.GetAllUserResponse{}
 
-	// )
+	var (
+		filter = " WHERE TRUE "
+		offset = " OFFSET 0"
+		limit  = " LIMIT 10"
+	)
 
+	query := `
+		SELECT
+			id,
+			first_name,
+			last_name,
+			phone_number
+		FROM users
+	`
+
+	if len(req.Search) > 0 {
+		filter += " AND first_name ILIKE '%' || '" + req.Search + "' || '%' "
+	}
+
+	if req.Offset > 0 {
+		offset = fmt.Sprintf(" OFFSET %d", req.Offset)
+	}
+
+	if req.Limit > 0 {
+		limit = fmt.Sprintf(" LIMIT %d", req.Limit)
+	}
+
+	query += filter + offset + limit
+
+	rows, err := u.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user user_service.User
+		err = rows.Scan(
+			&user.Id,
+			&user.FirstName,
+			&user.LastName,
+			&user.PhoneNumber,
+		)
+		if err != nil {
+			return nil, err
+		}
+		resp.User = append(resp.User, &user)
+	}
 	return resp, nil
+}
+
+func (u *userRepo) Update(ctx context.Context, req *user_service.UpdateUserRequest) error {
+
+	fmt.Println("------------>", req)
+
+	query := `
+		UPDATE users SET 
+			id = :id,
+			first_name = :first_name,
+			last_name = :last_name,
+			phone_number = :phone_number
+		WHERE id = :id
+	
+	`
+	params := map[string]interface{}{
+		"id":           req.Id,
+		"first_name":   req.FirstName,
+		"last_name":    req.LastName,
+		"phone_number": req.PhoneNumber,
+	}
+
+	query, args := helper.ReplaceQueryParams(query, params)
+
+	_, err := u.db.Exec(ctx, query, args...)
+	if err != nil {
+		return nil
+	}
+
+	return nil
 }
 
 func (u *userRepo) Delete(ctx context.Context, req *user_service.PrimaryKey) (err error) {
@@ -99,34 +174,6 @@ func (u *userRepo) Delete(ctx context.Context, req *user_service.PrimaryKey) (er
 	_, err = u.db.Exec(ctx, query, req.Id)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (u *userRepo) Update(ctx context.Context, req *user_service.PrimaryKey) error {
-
-	var resp user_service.User
-
-	query := `
-		UPDATE SET users 
-			id,
-			first_name,
-			last_name,
-			phone_number
-		WHERE id = $1
-	`
-
-	params := map[string]interface{}{
-		"id":         req.Id,
-		"firs_name":  resp.FirstName,
-		"last_name":  resp.LastName,
-		"phone_name": resp.PhoneNumber,
-	}
-
-	_, err := u.db.Exec(ctx, query, pgx.NamedArgs(params))
-	if err != nil {
-		return nil
 	}
 
 	return nil

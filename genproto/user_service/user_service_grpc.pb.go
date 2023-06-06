@@ -38,7 +38,7 @@ type UserServiceClient interface {
 	GetById(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*User, error)
 	GetAll(ctx context.Context, in *GetAllUserRequest, opts ...grpc.CallOption) (*GetAllUserResponse, error)
 	Delete(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	Update(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Update(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PhoneChecker(ctx context.Context, in *PhoneNumber, opts ...grpc.CallOption) (*Checker, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	Register(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
@@ -88,7 +88,7 @@ func (c *userServiceClient) Delete(ctx context.Context, in *PrimaryKey, opts ...
 	return out, nil
 }
 
-func (c *userServiceClient) Update(ctx context.Context, in *PrimaryKey, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *userServiceClient) Update(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, UserService_Update_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -132,7 +132,7 @@ type UserServiceServer interface {
 	GetById(context.Context, *PrimaryKey) (*User, error)
 	GetAll(context.Context, *GetAllUserRequest) (*GetAllUserResponse, error)
 	Delete(context.Context, *PrimaryKey) (*emptypb.Empty, error)
-	Update(context.Context, *PrimaryKey) (*emptypb.Empty, error)
+	Update(context.Context, *UpdateUserRequest) (*emptypb.Empty, error)
 	PhoneChecker(context.Context, *PhoneNumber) (*Checker, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Register(context.Context, *CreateUserRequest) (*RegisterResponse, error)
@@ -155,7 +155,7 @@ func (UnimplementedUserServiceServer) GetAll(context.Context, *GetAllUserRequest
 func (UnimplementedUserServiceServer) Delete(context.Context, *PrimaryKey) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
-func (UnimplementedUserServiceServer) Update(context.Context, *PrimaryKey) (*emptypb.Empty, error) {
+func (UnimplementedUserServiceServer) Update(context.Context, *UpdateUserRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
 func (UnimplementedUserServiceServer) PhoneChecker(context.Context, *PhoneNumber) (*Checker, error) {
@@ -253,7 +253,7 @@ func _UserService_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _UserService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PrimaryKey)
+	in := new(UpdateUserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func _UserService_Update_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: UserService_Update_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).Update(ctx, req.(*PrimaryKey))
+		return srv.(UserServiceServer).Update(ctx, req.(*UpdateUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
